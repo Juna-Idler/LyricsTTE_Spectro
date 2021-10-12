@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>LyricsTTE Spectrogram</title>
+
+
+<style>
+    html,body{
+        height :100%;
+        margin:0;
+    }
+    button, input, select, textarea {
+        font-family : inherit;
+        font-size : 100%;
+    }
+    #Screen
+    {
+        display: flex;
+        flex-direction: column;
+        height :100%;
+        padding:2px;
+        box-sizing: border-box;
+
+        user-select: none;
+    }
+    #PlayerArea{
+        display: flex;
+        height:54;
+        flex: 0 0 auto;
+    }
+    #AudioPlayer
+    {
+        width :50%;
+        flex: 1 0 50%;
+    }
+    .playerLabel
+    {
+        height :100%;
+        flex: 0 0 auto;
+        padding: 0px 2px;
+        margin: 0px 1px;
+        text-align: center;
+        border: black 0px solid;
+    }
+    .vcenter{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    #HelpButton
+    {
+        width: 32px;
+        height: 32px;
+        vertical-align: middle;
+        border: black 1px solid;
+        line-height: 32px;
+    }
+    #HelpSwitch
+    {
+        display: none;
+    }
+    #HelpSwitch:checked ~ #HelpOverlap
+    {
+        display: block;
+    }
+    #HelpOverlap
+    {
+        position: fixed;
+        display: none;
+        width:100%;
+        height:100%;
+        top:0;left:0;
+        z-index: 1000;
+        box-sizing: border-box;
+    }
+    #HelpClose
+    {
+        position: absolute;
+        right:0px;
+        top:2px;
+        font-size: 32px;
+        color: black;
+        background-color: white;
+        padding: 0px 8px;
+    }
+    #HelpPage
+    {
+        width:100%;
+        height:100%;
+    }
+
+    #WaveDisplay
+    {
+        width: 100%;
+        height:256px;
+        overflow: hidden;
+
+        flex: 0 0 auto;
+    }
+    #WaveCanvas
+    {
+        background-color: black;
+    }
+
+    #TabLabels
+    {
+        flex: 0 1 auto;
+        padding-top: 2px;
+        border-bottom: 0px solid #999999;
+    }
+    input[name="mode_tab"] , input[name="stamp_line"] ,input[name="tune_line"]
+    {
+        display: none;
+    }
+    .TabContent{
+        display: none;
+    }
+    .tab_label
+    {
+        padding: 0px 8px;
+        margin:0px 8px;
+        border: 1px solid #000000;
+        border-bottom: 4px solid #BBBBBB;
+        border-top: 4px solid #eeeeee;
+        background-color: #dddddd;
+    }
+    #TabStamp:checked ~ * #TabStampLabel ,
+    #TabEdit:checked ~ * #TabEditLabel ,
+    #TabTune:checked ~ * #TabTuneLabel ,
+    #TabTest:checked ~ * #TabTestLabel 
+    {
+        background-color: #999999;
+        color: #fff;
+    }
+    #TabStamp:checked ~ #TagStamper ,
+    #TabEdit:checked ~ #TextEditor ,
+    #TabTune:checked ~ #TimeTuner ,
+    #TabTest:checked ~ #TTTester
+    {
+        display:flex;
+    }
+
+    #TextEditor
+    {
+        height :100%;
+        flex-direction: column;
+
+        flex: 1 1 auto;
+    }    
+    #TextArea
+    {
+        height: 115%;
+        resize:none;
+        flex:1 1 auto;
+        margin: 4px;
+        padding: 4px;
+    }
+    #TextEditorBottom
+    {
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: center;        
+
+    }
+    .texteditor_controls
+    {
+        margin :0px 8px;
+    }
+
+    #TagStamper , #TimeTuner
+    {
+        height: 100%;
+        flex: 1 1 auto;
+        overflow-y :scroll;
+        border: black 1px solid;
+        margin: 4px;
+    }
+    #StamperList , #TunerList
+    {
+        list-style-type: decimal-leading-zero;
+        width: 100%;
+        margin: 2px 0;
+    }
+    #StamperList > li , #TunerList > li
+    {
+        border-bottom: solid 1px #cccccc;
+        line-height: 2;
+    }
+
+    .list_time
+    {
+        background-color:#eeeeee ;
+        margin-left: 5px;
+        text-align: center;
+        flex: 0 0 6em;
+    }
+    .list_text
+    {
+        padding-left: 5px;
+        flex: 1 1 auto;
+    }
+    input:checked ~ .list_time , input:checked ~ .list_text
+    {
+        background-color:#FFDDDD ;
+    }
+    .list_label
+    {
+        display: flex;
+    }
+
+    #TTTester
+    {
+        background-color: black;
+        height: 100%;
+        flex: 1 1 auto;
+        overflow-y :scroll;
+        margin: 4px;
+    }
+    #TesterList
+    {
+        list-style:none;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 2px 16px;
+    }
+    #TesterList > li{
+        font-family : inherit;
+        font-size : 150%;
+        width: 100%;
+        padding: 4px 8px;
+        box-sizing: border-box;
+    }
+    .Stanby{
+        color: #999999;
+    }
+    .Active{
+        color: white;
+        background-color: #004400;
+    }
+</style>
+
+</head>
+<body>
+<div id="Screen">
+    <div id="PlayerArea">
+        <audio id="AudioPlayer" preload controls>
+        </audio>
+        <span class="playerLabel">Rate×<span id="PlaybackRateText">1.0</span><br>
+            <input type="range" id="PlaybackRate" min="0.25" max="2" value="1" step="0.25">
+        </span>
+        <span class="playerLabel vcenter">
+            <label for="HelpSwitch" id="HelpButton">？</label>
+        </span>
+    </div>
+    <input type="checkbox" id="HelpSwitch">
+    <div id="HelpOverlap">
+        <label for="HelpSwitch" id="HelpClose">×</label>
+        <iframe id="HelpPage" src="help.html"></iframe>
+    </div>
+    <div id="WaveDisplay">
+        <canvas id="WaveCanvas"></canvas>
+    </div>
+    <input type="radio" id="TabStamp" name="mode_tab">
+    <input type="radio" id="TabEdit" name="mode_tab" checked>
+    <input type="radio" id="TabTune" name="mode_tab">
+    <input type="radio" id="TabTest" name="mode_tab">
+    <div id="TabLabels">
+        <label for="TabStamp" id="TabStampLabel" class="tab_label">TagStamp</label>
+        <label for="TabEdit" id="TabEditLabel" class="tab_label">TextEdit</label>
+        <label for="TabTune" id=TabTuneLabel class="tab_label">TimeTune</label>
+        <label for="TabTest" id=TabTestLabel class="tab_label">TTTest</label>
+    </div>
+    <div id="TagStamper" class="TabContent">
+        <ol id="StamperList">
+        </ol>
+    </div>
+    <div id="TextEditor" class="TabContent">
+        <textarea id="TextArea" spellcheck="false"></textarea>
+        <div id="TextEditorBottom">
+            <button id="Download" type="button" class="texteditor_controls">Download</button>
+            <label><input type="checkbox" id="AutoSave" class="texteditor_controls">Auto save</label>
+        </div>
+    </div>
+    <div id="TimeTuner" class="TabContent">
+        <ol id="TunerList">
+        </ol>
+    </div>
+    <div id="TTTester" class="TabContent">
+        <ol id="TesterList">
+
+        </ol>
+    </div>
+
+</div>
+
+<script type='text/javascript' src='SpectrogramViewer.js' defer></script>
+<script type='text/javascript' src='AudioFragmentPlayer.js' defer></script>
+<script type='text/javascript' src='Lyrics.js' defer></script>
+<script type='text/javascript' src='index.js' defer></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>LyricsTTE Web Help</title>
+
+<style>
+    body{
+        color: black;
+        background-color: white;
+    }
+    section{
+        border-bottom: black 2px solid;
+    }
+    h2{
+        margin :4px 0px 0px;
+    }
+    h3{
+        margin :4px 0px 0px;
+    }
+    h4{
+        margin :2px 0px 0px;
+    }
+    ol{
+        margin: 2px 0px;
+    }
+
+    #FlexTables
+    {
+        display: flex;
+    }
+
+    table {
+        border: 2px solid black;
+        border-collapse: collapse;
+        margin: 0px 2px 4px;
+    }
+    table th
+    {
+        text-align: center;
+        border: 1px solid black;
+        background-color: rgb(192, 255, 255);
+    }
+    table td
+    {
+        text-align: left;
+        border: 1px solid black;
+        padding-left: 4px;
+    }
+</style>
+
+</head>
+<body>
+    <section>
+    <h2>基本的な流れ</h2>
+    <ol>
+    <li>
+    ブラウザが対応しているオーディオファイルをドラッグアンドドロップする。<BR>
+    と、FFTのパラメータを決定する画面が出るので、サンプル数を選んで「Load」を押すと読み込み開始。<BR>
+    <B>曲の長さやPCの性能によるが、1024でも数秒は待つことになり、4096以降は分単位で掛かることもあります。</B>
+    </li>
+    <li>
+    [TextEdit]のtextareaに歌詞を張り付ける、もしくは歌詞ファイルをドラッグアンドドロップ。<BR>
+    </li>
+    <li>
+	[TagStamp]にして音楽再生。スペースキーでタグ打ち。他のキー操作は下のほうに書いておく。<BR>
+    波形画面をマウスでドラッグすると再生位置も動く。
+    </li>
+    <li>
+    [TimeTune]で微調整が可能。現在行の時間を波形画面で掴んで動かせる。<BR>
+    例によってキー操作は下を見ろ。
+    </li>
+    <li>
+    [TTTest]では簡単な表示テストが行える。
+    </li>
+    <li>
+    最後に[TextEdit]に戻って、コピペするか、右下の「Download」で.lrcファイル(UTF-8 BOM)として保存することも可能。<BR>
+    「Auto save」は<B>モード移動したとき</B>編集中の内容がブラウザ依存のどこかに保存される。このページを開きなおした時に保存データがあると、復元される。
+    </li>
+    </ol>
+</section>
+<section>
+<h2>操作説明</h2>
+<div id="FlexTables">
+<table>
+    <caption>キー入力操作</caption>
+    <thead>
+        <tr><th>key</th><th>TabStamp</th><th>TimeTune</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>W ↑</td><td colspan="2">現在行を上に</td></tr>
+        <tr><td>S ↓</td><td colspan="2">現在行を下に</td></tr>
+        <tr><td>A ←</td><td>前のタグ行を再生</td><td>タグがあるならタグ手前1秒再生</td></tr>
+        <tr><td>D →</td><td>次のタグ行を再生</td><td>タグがあるならタグから1秒再生</td></tr>
+        <tr><td>Space Enter</td><td>タグを打ち込み次の行へ</td><td>タグがあるなら一行再生</td></tr>
+        <tr><td>Delete</td><td>現在行のタグ消去</td><td>何もしない</td></tr>
+        <tr><td>x</td><td>play/pause</td><td>何もしない</td></tr>
+        <tr><td>Z / C</td><td>一秒戻す/進める</td><td>何もしない</td></tr>
+    </tbody>
+</table>
+<table>
+    <caption>TimeTuneマウス操作</caption>
+    <thead><tr><th>操作</th><th>説明</th></tr></thead>
+    <tbody>
+        <tr><th colspan="2">波形画面</th></tr>
+        <tr><td>現在行タグマーカーをドラッグ</td><td>タグの時間を変更</td></tr>
+        <tr><td>他の位置でドラッグ</td><td>表示位置を移動</td></tr>
+        <tr><td>現在行タグマーカーの左側でダブルクリック</td><td>タグ手前1秒再生</td></tr>
+        <tr><td>現在行タグマーカーの右側でダブルクリック</td><td>タグから1秒再生</td></tr>
+        <tr><th colspan="2">リスト画面</th></tr>
+        <tr><td>クリック</td><td>クリックした行を現在行に</td></tr>
+        <tr><td>ダブルクリック</td><td>タグがあるなら一行再生</td></tr>
+    </tbody>
+</table>
+</div>
+</section>
+<section>
+<h2>細かい説明</h2>
+<h3>オーディオ操作</h3>
+ブラウザ依存のaudioタグによるコントロールパネル<br>
+<h3>Rate</h3>
+audioの機能を使ったplaybackRate変更。とりあえず実用範囲内と思われる0.25～2.00を0.25刻みで。<br>
+<h3>？</h3>
+この画面です<br>
+
+<h3>スペクトログラム表示</h3>
+読み込んだオーディオファイルの形です。<br>
+TimeTuneモード以外ではドラッグの左右移動でaudioの再生位置を動かせます<br>
+
+<h3>ドラッグアンドドロップ</h3>
+音声ファイルとテキストファイルを受け入れます。<br>
+ブラウザが判定したMIMEタイプが、"audio/*"なら音声ファイルとして読み込み、<br>
+"text/*"または拡張子が".lrc"なら、テキスト（UTF8）として読み込みます。<br>
+複数ファイルの同時ドロップにも対応。<br>
+同時に同種のファイルがドロップした場合、最初に読み込みが成功したものが選ばれ以降の同種はスキップします。<br>
+音声ファイルの入力方法はこれしかありません。<br>
+
+
+
+<h3>タブっぽいの</h3>
+下の表示モードを切り替えます。<br>
+StampとTuneから切り替わる時に、その時表示されていた内容がtextareaに反映され、<br>
+StampとTuneに切り替わる時は、textareaの内容をもとに構築されます。
+
+<h3>TagStamp</h3>
+タグを打ち込みます<br>
+
+
+<h3>TextEdit</h3>
+テキストを直接編集します<br>
+「Download」でtextareaの内容を.lrcファイルとしてダウンロードできます。<br>
+<h4>「Auto save」</h4>
+細かい動作説明をすると、タブを押してモード移動したときに、そのタブでの最新の内容をtextareaに書き出す処理をします。<br>
+その時にオートセーブにチェックが入っていれば、その内容をlocalStrageに保存します。<br>
+保存された内容は次にこのページを新しく開いたときに読み込まれます。<br>
+一度オートセーブされると、チェックを切ってもセーブされた内容は残り、毎回読み込まれます。<br>
+空の状態でオートセーブし、その後オートセーブを切ってタブ移動するとlocalStrageからキーも含めて削除できます。<br>
+
+
+<h3>TimeTune</h3>
+タイムタグを波形を見ながら微調整できるLyricsTTEの目玉のモードです。<br>
+このモードの時のみWeb Audio APIを使って生の音声データを操作するので、波形表示はaudioから切り離されます。<br>
+
+<h3>TTTest</h3>
+テスト表示<br>
+<S>ちなみに"TTTEST"は"Time Tag Text Edit Stamp Tune"の略です。</S><br>
+
+
+</section>
+<h2>戯言</h2>
+<aside>
+    とりあえず拾ったFFTを見よう見まねでこねくり回して、それっぽい絵を出力してるが、合ってるのか分からん。
+    それゆえに最適化とか全く考えてないので、読み込みも描画もめちゃくちゃ重い。
+</aside>
+</body>
+</html>
