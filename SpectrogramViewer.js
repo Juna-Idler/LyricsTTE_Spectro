@@ -1,7 +1,7 @@
 
 class SpectrogramViewer
 {
-    constructor(audioBuffer,n = 1024 * 1,rate = 1.5,add = 1.0)
+    constructor(canvas,audioBuffer,n = 1024 * 1,rate = 1.5,add = 1.0)
     {
         if (!Number.isInteger(Math.log2(n)))
             return
@@ -27,7 +27,7 @@ class SpectrogramViewer
             }
         }
 
-        console.log("SpectrogramViewer start:duration=" + audioBuffer.duration + ",N=" +this.N);
+        console.log("SpectrogramViewer FFT start:duration=" + audioBuffer.duration + ",N=" +this.N);
         const start_time = performance.now();
         let mono;
         if (audioBuffer.numberOfChannels > 1)
@@ -87,7 +87,29 @@ class SpectrogramViewer
             this.SpectrSet[i] = data;
         }
         this.duration = performance.now() - start_time;
-        console.log("SpectrogramViewer constructor end:" + this.duration);
+        console.log("SpectrogramViewer FFT end:" + this.duration);
+
+        console.log("SpectrogramViewer: createImageData start:");
+        const cid_start_time = performance.now();
+
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(this.SpectrSet.length,256);
+        const data = imageData.data;
+        for (let x = 0;x < imageData.width;x++)
+        {
+            for (let y = 0;y < 256;y++)
+            {
+                let v = this.SpectrSet[x][y];
+                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 0] = 255 * v;
+                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 1] = 255 * v;
+                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 2] = 255 * v;
+                data[((y*(imageData.width*4)) + (x*4)) + 3] = 255;
+            }
+        }
+        this.ImageData = imageData;
+        const cid_duration = performance.now() - cid_start_time;
+
+        console.log("SpectrogramViewer createImageData end:" + cid_duration);
 
     }
 
@@ -122,22 +144,7 @@ class SpectrogramViewer
         if (width <= 0)
             return;
 
-        const imageData = ctx.createImageData(width,height);
-        const data = imageData.data;
-        data.fill(0);
-
-        for (let x = x_start;x < width;x++)
-        {
-            for (let y = 0;y < 256;y++)
-            {
-                let v = this.SpectrSet[start + x - x_start][y];
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 0] = 255 * v;
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 1] = 255 * v;
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 2] = 255 * v;
-                data[((y*(imageData.width*4)) + (x*4)) + 3] = 255;
-            }
-        }
-        ctx.putImageData(imageData,0,0);
+        ctx.putImageData(this.ImageData,x_start - start,0);
     }
 
     static FFT( an, bn, N, Inverse ){

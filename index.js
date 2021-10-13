@@ -937,7 +937,7 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
         const n = Number(document.getElementById("SpectroSamplesN").value);
         const r = Number(document.getElementById("SpectroDRate").value);
         const a = Number(document.getElementById("SpectroDAdd").value);
-        spectrogramViewer = new SpectrogramViewer(fragmentPlayer.audioBuffer,n,r,a);
+        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,n,r,a);
         WaveViewTime = 0;
         playbackRate.value = 1;
         DrawWaveView();
