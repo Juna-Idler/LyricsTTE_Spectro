@@ -25,11 +25,6 @@ class SpectrogramViewer
                 this.LogTable[i] = Math.floor(Math.log10(i + 1) / max * 255);
                 this.CountTable[this.LogTable[i]]++;
             }
-            for (let i = 0; i < 256;i++)
-            {
-                if (this.CountTable[i] == 0)
-                    this.CountTable[i] = 1;
-            }
         }
 
         console.log("SpectrogramViewer start:duration=" + audioBuffer.duration + ",N=" +this.N);
@@ -57,6 +52,8 @@ class SpectrogramViewer
 
         let ar;
         let ai = new Float32Array(this.N);
+        const max = Math.log10(this.N / 2);
+        const tmp = new Array(this.N/2);
         for (let i = 0,start = 0; start < mono.length - (frequency / 100) ;i++,start += frequency / 100)
         {
             ar = mono.slice(start,start + this.N);
@@ -70,12 +67,22 @@ class SpectrogramViewer
             data.fill(0);
             for (let j = 0; j < this.N / 2;j++)
             {
-                const v = Math.log10(Math.sqrt((ar[j] * ar[j] + ai[j] * ai[j]) / 2)) / rate + add;
+                const v = Math.log10(Math.sqrt(ar[j] * ar[j] + ai[j] * ai[j])) / rate + add;
+                tmp[j] = v;
                 data[this.LogTable[j]] += v;
             }
+            
             for (let j = 0; j < 256;j++)
             {
-                data[j] /= this.CountTable[j];
+                if (this.CountTable[j] == 0)
+                {
+                    const index = Math.pow(10,j * max / 255) - 1;
+                    const floor = Math.floor(index);
+                    const ceil = Math.ceil(index);
+                    data[j] = (floor == ceil) ? tmp[index] : tmp[floor] * (ceil - index) + tmp[ceil] * (index - floor);
+                }
+                else
+                    data[j] /= this.CountTable[j];
             }
             this.SpectrSet[i] = data;
         }

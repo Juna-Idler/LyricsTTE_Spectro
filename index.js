@@ -913,8 +913,8 @@ selectArea.innerHTML =`
 <option>4096</option>
 <option>8192</option>
 </select></label><br>
-<label style="display:none">なんか倍率<input type="range" id="SpectroDRate" min="1" max="3" value="1.5" step="0.5"></label><br>
-<label style="display:none">なんか加算値<input type="range" id="SpectroDAdd" min="1" max="1.5" value="1" step="0.25"></label><br>
+<label style="display:none">無音判定倍率<input type="range" id="SpectroDRate" min="1" max="3" value="2." step="0.5"></label><br>
+<label style="display:none">音量ブースト加算値<input type="range" id="SpectroDAdd" min="1" max="1.5" value="1" step="0.25"></label><br>
 <br>
 <button id="SpectroLoad" type="button" >Load</button>
 <button id="SpectroCancel" type="button" >Cancel</button>
