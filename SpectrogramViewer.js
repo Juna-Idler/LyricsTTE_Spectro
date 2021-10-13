@@ -50,16 +50,17 @@ class SpectrogramViewer
         
         const frequency = audioBuffer.sampleRate;
 
-        let ar;
-        let ai = new Float32Array(this.N);
+        let ar = new Array(this.N);;
+        let ai = new Array(this.N);
         const max = Math.log10(this.N / 2);
         const tmp = new Array(this.N/2);
-        for (let i = 0,start = 0; start < mono.length - (frequency / 100) ;i++,start += frequency / 100)
+        for (let i = 0; i < this.width ;i++)
         {
-            ar = mono.slice(start,start + this.N);
+            const start = i * frequency / 100;
+            const slice = mono.slice(start,start + this.N);
             for (let j = 0;j < this.N;j++)
             {
-                ar[j] *= this.Window[j];
+                ar[j] = (j < slice.length) ? slice[j] * this.Window[j] : 0;
             }
             ai.fill(0);
             SpectrogramViewer.FFT(ar,ai,this.N,false);
