@@ -70,7 +70,7 @@ function DrawWaveView()
     const width  = canvas.width;
     const height = canvas.height;
     const nowpoint = Math.floor(width * 0.3)
-    spectrogramViewer.DrawCanvas(canvas,WaveViewTime / 10 - nowpoint);
+    spectrogramViewer.DrawCanvas(canvas,WaveViewTime / 1000 - nowpoint / 100);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
     ctx.fillRect(nowpoint,0,1,height);
@@ -643,7 +643,7 @@ var SetDefaultCanvasMouseEvent;
     {
         const nowpoint = Math.floor(canvas.width * 0.3)
         const view_start_ms = WaveViewTime - (nowpoint * 10);
-        spectrogramViewer.DrawCanvas(canvas,view_start_ms / 10);
+        spectrogramViewer.DrawCanvas(canvas,view_start_ms / 1000);
         const ctx = canvas.getContext("2d");
         ctx.font = canvas.height / 16 + "px sans-serif";
         ctx.textBaseline = "ideographic";
@@ -937,7 +937,7 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
         const n = Number(document.getElementById("SpectroSamplesN").value);
         const r = Number(document.getElementById("SpectroDRate").value);
         const a = Number(document.getElementById("SpectroDAdd").value);
-        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,n,r,a);
+        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,100,256,n,r,a);
         WaveViewTime = 0;
         playbackRate.value = 1;
         DrawWaveView();

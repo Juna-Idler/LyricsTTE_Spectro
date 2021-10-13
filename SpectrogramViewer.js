@@ -1,11 +1,16 @@
 
 class SpectrogramViewer
 {
-    constructor(canvas,audioBuffer,n = 1024 * 1,rate = 1.5,add = 1.0)
+    constructor(canvas,audioBuffer,
+                zoom = 100,height = 256,
+                n = 1024 * 1,rate = 1.5,add = 1.0)
     {
         if (!Number.isInteger(Math.log2(n)))
             return
+        this.Zoom = zoom;
+        this.Height = height;
         this.N = n;
+
         if (!this.Window || this.Window.length != this.N)
         {
             this.Window = new Array(this.N);
@@ -14,20 +19,20 @@ class SpectrogramViewer
                 this.Window[i] = SpectrogramViewer.Hanning(i,this.N);
             }
         }
+        const max = Math.log10(this.N / 2);
         if (!this.LogTable || this.LogTable.length != this.N)
         {
             this.LogTable = new Array(this.N / 2);
-            this.CountTable = new Array(256);
+            this.CountTable = new Array(height);
             this.CountTable.fill(0);
-            const max = Math.log10(this.N / 2);
             for (let i = 0; i < this.N / 2;i++)
             {
-                this.LogTable[i] = Math.floor(Math.log10(i + 1) / max * 255);
+                this.LogTable[i] = Math.floor(Math.log10(i + 1) / max * (height - 1));
                 this.CountTable[this.LogTable[i]]++;
             }
         }
 
-        console.log("SpectrogramViewer FFT start:duration=" + audioBuffer.duration + ",N=" +this.N);
+        console.log("SpectrogramViewer FFT start:duration=" + audioBuffer.duration + ",Zoom=" + this.Zoom + ",N=" +this.N);
         const start_time = performance.now();
         let mono;
         if (audioBuffer.numberOfChannels > 1)
@@ -45,18 +50,23 @@ class SpectrogramViewer
             mono = audioBuffer.getChannelData(0);
         }
 
-        this.width = Math.floor(audioBuffer.duration * 100);
-        this.SpectrSet = new Array(this.width);
-        
+        const width = Math.floor(audioBuffer.duration * zoom);
+        this.Width = width;
+
+        const ctx = canvas.getContext('2d');
+        this.ImageData = ctx.createImageData(width,height);
+        const data = this.ImageData.data;
+
         const frequency = audioBuffer.sampleRate;
 
         let ar = new Array(this.N);;
         let ai = new Array(this.N);
-        const max = Math.log10(this.N / 2);
         const tmp = new Array(this.N/2);
-        for (let i = 0; i < this.width ;i++)
+        const volumes = new Array(height);
+
+        for (let i = 0; i < width ;i++)
         {
-            const start = i * frequency / 100;
+            const start = i * frequency / zoom;
             const slice = mono.slice(start,start + this.N);
             for (let j = 0;j < this.N;j++)
             {
@@ -64,88 +74,49 @@ class SpectrogramViewer
             }
             ai.fill(0);
             SpectrogramViewer.FFT(ar,ai,this.N,false);
-            const data = new Array(256);
-            data.fill(0);
+            volumes.fill(0);
             for (let j = 0; j < this.N / 2;j++)
             {
                 const v = Math.log10(Math.sqrt(ar[j] * ar[j] + ai[j] * ai[j])) / rate + add;
                 tmp[j] = v;
-                data[this.LogTable[j]] += v;
+                volumes[this.LogTable[j]] += v;
             }
             
-            for (let j = 0; j < 256;j++)
+            for (let j = 0; j < height;j++)
             {
                 if (this.CountTable[j] == 0)
                 {
-                    const index = Math.pow(10,j * max / 255) - 1;
+                    const index = Math.pow(10,j * max / (height - 1)) - 1;
                     const floor = Math.floor(index);
                     const ceil = Math.ceil(index);
-                    data[j] = (floor == ceil) ? tmp[index] : tmp[floor] * (ceil - index) + tmp[ceil] * (index - floor);
+                    volumes[j] = (floor == ceil) ? tmp[index] : tmp[floor] * (ceil - index) + tmp[ceil] * (index - floor);
                 }
                 else
-                    data[j] /= this.CountTable[j];
+                    volumes[j] /= this.CountTable[j];
+
+                const v = volumes[j];
+                data[(((height -j)*(width*4)) + (i*4)) + 0] = 255 * v;
+                data[(((height -j)*(width*4)) + (i*4)) + 1] = 255 * v;
+                data[(((height -j)*(width*4)) + (i*4)) + 2] = 255 * v;
+                data[(((height -j)*(width*4)) + (i*4)) + 3] = 255;
             }
-            this.SpectrSet[i] = data;
         }
         this.duration = performance.now() - start_time;
         console.log("SpectrogramViewer FFT end:" + this.duration);
-
-        console.log("SpectrogramViewer: createImageData start:");
-        const cid_start_time = performance.now();
-
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.createImageData(this.SpectrSet.length,256);
-        const data = imageData.data;
-        for (let x = 0;x < imageData.width;x++)
-        {
-            for (let y = 0;y < 256;y++)
-            {
-                let v = this.SpectrSet[x][y];
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 0] = 255 * v;
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 1] = 255 * v;
-                data[(((256 -y)*(imageData.width*4)) + (x*4)) + 2] = 255 * v;
-                data[((y*(imageData.width*4)) + (x*4)) + 3] = 255;
-            }
-        }
-        this.ImageData = imageData;
-        const cid_duration = performance.now() - cid_start_time;
-
-        console.log("SpectrogramViewer createImageData end:" + cid_duration);
-
     }
 
-    get isValid() {return !!this.width;}
+    get isValid() {return !!this.Width;}
 
-    DrawCanvas(canvas,start)
+    DrawCanvas(canvas,start_sec)
     {
         if (!this.isValid)
             return ;
-        start = Math.floor(start);
+        let start = Math.floor(start_sec * this.Zoom);
         const ctx = canvas.getContext('2d');
        
-        let width  = canvas.width;
-        let height = 256;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
 
-//        ctx.fillStyle = "gray";
-//        ctx.fillRect(0,0,width,height);
-        ctx.clearRect(0,0,width,height);
-
-
-        let x_start = 0;
-        start = start | 0;
-        if (start + width > this.width)
-        {
-            width = (this.width - start) | 0;
-        }
-        if (start < 0)
-        {
-            x_start = (-start) | 0;
-            start = 0;
-        }
-        if (width <= 0)
-            return;
-
-        ctx.putImageData(this.ImageData,x_start - start,0);
+        ctx.putImageData(this.ImageData, -start,0);
     }
 
     static FFT( an, bn, N, Inverse ){
