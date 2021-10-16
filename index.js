@@ -48,6 +48,7 @@ var audioFilename = "";
 var spectrogramViewer;
 var WaveViewTime = 0;
 var TuneModeDraw = null;
+var Zoom = 100;
 
 var fragmentPlayer = null;
 
@@ -70,7 +71,7 @@ function DrawWaveView()
     const width  = canvas.width;
     const height = canvas.height;
     const nowpoint = Math.floor(width * 0.3)
-    spectrogramViewer.DrawCanvas(canvas,WaveViewTime / 1000 - nowpoint / 100);
+    spectrogramViewer.DrawCanvas(canvas,WaveViewTime / 1000 - nowpoint / Zoom);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "white";
     ctx.fillRect(nowpoint,0,1,height);
@@ -168,7 +169,7 @@ var SetDefaultCanvasMouseEvent;
     const wait = 300;
 
     //これがない（＝CSS指定のresizeで一度リサイズしない）と、何故かwindowのリサイズの度に7pxずつ増えていく
-    container.style.height = container.offsetHeight + "px";
+//    container.style.height = container.offsetHeight + "px";
 
     setCanvasSize();
 
@@ -190,13 +191,14 @@ var SetDefaultCanvasMouseEvent;
     // Canvasサイズをコンテナの100%に 
     function setCanvasSize() {
         canvas.width = container.offsetWidth;
-        canvas.height = container.offsetHeight;
         var ctx = canvas.getContext("2d");
         ctx.clearRect(0,0,canvas.width,canvas.height);
 
-        if (spectrogramViewer)
-            spectrogramViewer.DrawCanvas(canvas,audio.currentTime*100);
-
+        if (!!spectrogramViewer)
+        {
+            const nowpoint = Math.floor(canvas.width * 0.3)
+            spectrogramViewer.DrawCanvas(canvas,audio.currentTime - nowpoint / Zoom);
+        }
     }
 }());
 
@@ -642,14 +644,14 @@ var SetDefaultCanvasMouseEvent;
     function TimeTunerDraw()
     {
         const nowpoint = Math.floor(canvas.width * 0.3)
-        const view_start_ms = WaveViewTime - (nowpoint * 10);
+        const view_start_ms = WaveViewTime - (nowpoint / Zoom * 1000);
         spectrogramViewer.DrawCanvas(canvas,view_start_ms / 1000);
         const ctx = canvas.getContext("2d");
         ctx.font = canvas.height / 16 + "px sans-serif";
         ctx.textBaseline = "ideographic";
 
 
-        const view_end_ms = view_start_ms + (canvas.width * 10);
+        const view_end_ms = view_start_ms + (canvas.width / Zoom * 1000);
         let i = 0;
         for (i = 0; i < list.children.length;i++)
         {
@@ -670,7 +672,7 @@ var SetDefaultCanvasMouseEvent;
             const current = label.querySelector("input").checked;
 
             ctx.fillStyle = current ? "lime" : "red";
-            const x = (time - view_start_ms) / 10;
+            const x = (time - view_start_ms) / 1000 * Zoom;
             ctx.fillRect(x,0,1,canvas.height);
             ctx.fillText(text_span.textContent, x + 1, canvas.height);
         }
@@ -913,6 +915,18 @@ selectArea.innerHTML =`
 <option>4096</option>
 <option>8192</option>
 </select></label><br>
+<label>Zoom(pixels per sec) <select id="SpectroZoom">
+<option>50</option>
+<option selected>100</option>
+<option>200</option>
+<option>300</option>
+</select></label><br>
+<label>Height<select id="SpectroHeight">
+<option>150</option>
+<option>200</option>
+<option selected>250</option>
+<option>300</option>
+</select></label><br>
 <label style="display:none">無音判定倍率<input type="range" id="SpectroDRate" min="1" max="3" value="2." step="0.5"></label><br>
 <label style="display:none">音量ブースト加算値<input type="range" id="SpectroDAdd" min="1" max="1.5" value="1" step="0.25"></label><br>
 <br>
@@ -935,9 +949,14 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
         fragmentPlayer  = new AudioFragmentPlayer();
     fragmentPlayer.loadFile(DropFile).then(()=>{
         const n = Number(document.getElementById("SpectroSamplesN").value);
+        const z = Number(document.getElementById("SpectroZoom").value);
+        const h = Number(document.getElementById("SpectroHeight").value);
         const r = Number(document.getElementById("SpectroDRate").value);
         const a = Number(document.getElementById("SpectroDAdd").value);
-        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,100,256,n,r,a);
+
+        Zoom = z;
+        canvas.height = h;
+        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,z,h,n,r,a);
         WaveViewTime = 0;
         playbackRate.value = 1;
         DrawWaveView();
