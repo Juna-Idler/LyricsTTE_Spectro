@@ -126,7 +126,7 @@ var SetDefaultCanvasMouseEvent;
     canvas.ondragstart = (e)=>{return false;}
 
     function onMouseMove(e) {
-        WaveViewTime -=  (e.pageX - x) * 10;
+        WaveViewTime -=  (e.pageX - x) * 1000 / Zoom;
         if (WaveViewTime < 0)
             WaveViewTime = 0;
         x = e.pageX;
@@ -574,7 +574,7 @@ var SetDefaultCanvasMouseEvent;
         {
             const label = currentListItem.firstChild;
             let time = Number(label.dataset.starttime);
-            time += (move_x * (10));
+            time += move_x * 1000 / Zoom;
             time = time < 0 ? 0 : time;
             label.dataset.starttime = time;
             const time_span = label.querySelector(".list_time");
@@ -582,7 +582,7 @@ var SetDefaultCanvasMouseEvent;
         }
         else
         {
-            WaveViewTime -=  (e.pageX - x) * (10);
+            WaveViewTime -=  move_x * 1000 / Zoom;
             if (WaveViewTime < 0)
                 WaveViewTime = 0;
         }
@@ -604,8 +604,8 @@ var SetDefaultCanvasMouseEvent;
         if (time < 0)
             return;
 
-        const nowpoint = Math.floor(canvas.width * 0.3)
-        const time_x = (time - WaveViewTime) / 10 + nowpoint;
+        const nowpoint = Math.floor(canvas.width * 0.3);
+        const time_x = (time - WaveViewTime) / 1000 * Zoom + nowpoint;
         if (time_x - 16 < e.offsetX && e.offsetX < time_x + 16)
         {
             canvas.style.cursor = "pointer";
@@ -621,7 +621,7 @@ var SetDefaultCanvasMouseEvent;
             return;
 
         const nowpoint = Math.floor(canvas.width * 0.3)
-        const time_x = (time - WaveViewTime) / 10 + nowpoint;
+        const time_x = (time - WaveViewTime) / 1000 * Zoom + nowpoint;
         if (time_x < e.offsetX)
         {
             const duration = getNextTime(currentListItem) - time;
