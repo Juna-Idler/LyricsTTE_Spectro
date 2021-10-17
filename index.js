@@ -940,9 +940,6 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
     spectrogramViewer = null;
     audio.src = window.URL.createObjectURL(DropFile);
     const ctx = canvas.getContext("2d");
-    ctx.font = canvas.height / 2 + "px sans-serif";
-    ctx.fillStyle = "white";
-    ctx.fillText("Now Loading...", 0, canvas.height * 3 / 4);
     audioFilename = DropFile.name;
 
     if (fragmentPlayer === null)
@@ -956,10 +953,26 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
 
         Zoom = z;
         canvas.height = h;
-        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,z,h,n,r,a);
+        spectrogramViewer = new SpectrogramViewer(canvas,fragmentPlayer.audioBuffer,
+            (i,w)=>{
+                if (i < 0)
+                {
+                    DrawWaveView();
+                }
+                else
+                {
+                    ctx.textBaseline = "top";
+                    ctx.font = canvas.height / 8 + "px sans-serif";
+                    ctx.fillStyle = "white";
+                
+                    ctx.clearRect(0,0,canvas.width,canvas.height * 1.5 / 8);
+                    ctx.fillText(i + "/" + w, 0, 0);
+                
+                }
+            },
+            z,h,n,r,a);
         WaveViewTime = 0;
         playbackRate.value = 1;
-        DrawWaveView();
     });
 
     selectOverlap.style.display = "none";

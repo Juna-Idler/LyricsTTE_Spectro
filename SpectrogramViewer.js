@@ -1,39 +1,32 @@
 
+class WorkerInline extends Worker{
+    #ctx = "";
+
+    constructor(src){
+        if(!(typeof src === "function" || typeof src === "string")){
+            throw new Error("argument must be 'function' or 'string'");
+        }
+
+        const ctx = URL.createObjectURL(new Blob([typeof src === "function" ? src.toString().replace(/^.+?\{/s, "").replace(/\}$/s, "") : src]));
+        super(ctx);
+        this.#ctx = ctx;
+    }
+
+    terminate(){
+        super.terminate();
+        URL.revokeObjectURL(this.#ctx);
+    }
+}
+
 class SpectrogramViewer
 {
-    constructor(canvas,audioBuffer,
+    constructor(canvas,audioBuffer,callback,
                 zoom = 100,height = 256,
                 n = 1024 * 1,rate = 1.5,add = 1.0)
     {
         if (!Number.isInteger(Math.log2(n)))
             return
-        this.Zoom = zoom;
-        this.Height = height;
-        this.N = n;
 
-        if (!this.Window || this.Window.length != this.N)
-        {
-            this.Window = new Array(this.N);
-            for (let i = 0; i < this.N;i++)
-            {
-                this.Window[i] = SpectrogramViewer.Hanning(i,this.N);
-            }
-        }
-        const max = Math.log10(this.N / 2);
-        if (!this.LogTable || this.LogTable.length != this.N)
-        {
-            this.LogTable = new Array(this.N / 2);
-            this.CountTable = new Array(height);
-            this.CountTable.fill(0);
-            for (let i = 0; i < this.N / 2;i++)
-            {
-                this.LogTable[i] = Math.floor(Math.log10(i + 1) / max * (height - 1));
-                this.CountTable[this.LogTable[i]]++;
-            }
-        }
-
-        console.log("SpectrogramViewer FFT start:duration=" + audioBuffer.duration + ",Zoom=" + this.Zoom + ",N=" +this.N);
-        const start_time = performance.now();
         let mono;
         if (audioBuffer.numberOfChannels > 1)
         {
@@ -51,65 +44,37 @@ class SpectrogramViewer
         }
 
         const width = Math.floor(audioBuffer.duration * zoom);
-        this.Width = width;
+        const imageData = canvas.getContext('2d').createImageData(width,height);
+        this.Zoom = zoom;
 
-        const ctx = canvas.getContext('2d');
-        this.ImageData = ctx.createImageData(width,height);
-        const data = this.ImageData.data;
+        const worker = new WorkerInline(InlineWorker);
 
-        const frequency = audioBuffer.sampleRate;
-
-        let ar = new Array(this.N);;
-        let ai = new Array(this.N);
-        const tmp = new Array(this.N/2);
-        const volumes = new Array(height);
-
-        for (let i = 0; i < width ;i++)
-        {
-            const start = i * frequency / zoom;
-            const slice = mono.slice(start,start + this.N);
-            for (let j = 0;j < this.N;j++)
+        worker.onmessage = (e) => {
+            if (e.data.data)
             {
-                ar[j] = (j < slice.length) ? slice[j] * this.Window[j] : 0;
+                this.ImageData = e.data;
+                callback(-1,0);
             }
-            ai.fill(0);
-            SpectrogramViewer.FFT(ar,ai,this.N,false);
-            volumes.fill(0);
-            for (let j = 0; j < this.N / 2;j++)
+            else
             {
-                const v = Math.log10(Math.sqrt(ar[j] * ar[j] + ai[j] * ai[j])) / rate + add;
-                tmp[j] = v;
-                volumes[this.LogTable[j]] += v;
+                callback(e.data.i,e.data.width);
             }
-            
-            for (let j = 0; j < height;j++)
-            {
-                if (this.CountTable[j] == 0)
-                {
-                    const index = Math.pow(10,j * max / (height - 1)) - 1;
-                    const floor = Math.floor(index);
-                    const ceil = Math.ceil(index);
-                    volumes[j] = (floor == ceil) ? tmp[index] : tmp[floor] * (ceil - index) + tmp[ceil] * (index - floor);
-                }
-                else
-                    volumes[j] /= this.CountTable[j];
-
-                const v = volumes[j];
-                data[(((height -j)*(width*4)) + (i*4)) + 0] = 255 * v;
-                data[(((height -j)*(width*4)) + (i*4)) + 1] = 255 * v;
-                data[(((height -j)*(width*4)) + (i*4)) + 2] = 255 * v;
-                data[(((height -j)*(width*4)) + (i*4)) + 3] = 255;
-            }
-        }
-        this.duration = performance.now() - start_time;
-        console.log("SpectrogramViewer FFT end:" + this.duration);
+        };
+        const message = {
+            imageData:imageData,
+            mono: mono,
+            zoom: zoom,
+            n:n,
+            rate:rate,
+            add:add,
+            frequency:audioBuffer.sampleRate
+        };
+        worker.postMessage(message,[message.imageData.data.buffer]);
     }
-
-    get isValid() {return !!this.Width;}
 
     DrawCanvas(canvas,start_sec)
     {
-        if (!this.isValid)
+        if (!this.ImageData)
             return ;
         let start = Math.floor(start_sec * this.Zoom);
         const ctx = canvas.getContext('2d');
@@ -118,8 +83,88 @@ class SpectrogramViewer
 
         ctx.putImageData(this.ImageData, -start,0);
     }
+}
 
-    static FFT( an, bn, N, Inverse ){
+function InlineWorker(){
+    onmessage = function(e) {
+
+        const imageData = e.data.imageData;
+        const mono = e.data.mono;
+        const zoom = e.data.zoom;
+        const n = e.data.n;
+        const rate = e.data.rate;
+        const add = e.data.add;
+        const frequency = e.data.frequency;
+    
+        const width = imageData.width;
+        const height = imageData.height;
+    
+    
+        const window = new Array(n);
+        for (let i = 0; i < n;i++)
+        {
+            window[i] = Hanning(i,n);
+        }
+        const max = Math.log10(n / 2);
+        const logTable = new Array(n / 2);
+        const countTable = new Array(height);
+        countTable.fill(0);
+        for (let i = 0; i < n / 2;i++)
+        {
+            logTable[i] = Math.floor(Math.log10(i + 1) / max * (height - 1));
+            countTable[logTable[i]]++;
+        }
+    
+        let ar = new Array(n);;
+        let ai = new Array(n);
+        const tmp = new Array(n/2);
+        const volumes = new Array(height);
+    
+        for (let i = 0; i < width ;i++)
+        {
+            const start = i * frequency / zoom;
+            const slice = mono.slice(start,start + n);
+            for (let j = 0;j < n;j++)
+            {
+                ar[j] = (j < slice.length) ? slice[j] * window[j] : 0;
+            }
+            ai.fill(0);
+            FFT(ar,ai,n,false);
+            volumes.fill(0);
+            for (let j = 0; j < n / 2;j++)
+            {
+                const v = Math.log10(Math.sqrt(ar[j] * ar[j] + ai[j] * ai[j])) / rate + add;
+                tmp[j] = v;
+                volumes[logTable[j]] += v;
+            }
+            
+            for (let j = 0; j < height;j++)
+            {
+                if (countTable[j] == 0)
+                {
+                    const index = Math.pow(10,j * max / (height - 1)) - 1;
+                    const floor = Math.floor(index);
+                    const ceil = Math.ceil(index);
+                    volumes[j] = (floor == ceil) ? tmp[index] : tmp[floor] * (ceil - index) + tmp[ceil] * (index - floor);
+                }
+                else
+                    volumes[j] /= countTable[j];
+    
+                const v = volumes[j];
+                imageData.data[(((height -j)*(width*4)) + (i*4)) + 0] = 255 * v;
+                imageData.data[(((height -j)*(width*4)) + (i*4)) + 1] = 255 * v;
+                imageData.data[(((height -j)*(width*4)) + (i*4)) + 2] = 255 * v;
+                imageData.data[(((height -j)*(width*4)) + (i*4)) + 3] = 255;
+            }
+            postMessage({i:i,width:width});
+        }
+    
+    
+        postMessage(imageData,[imageData.data.buffer]);
+        close();
+      }
+    
+    function FFT( an, bn, N, Inverse ){
         /////////////////////////////////////////
         //参考：Javaで学ぶシミュレーションの基礎
         /////////////////////////////////////////
@@ -175,9 +220,9 @@ class SpectrogramViewer
             bn[ i ] = bn[ i ] / Math.sqrt(N);
         }
     }
-
-    static Hanning(n,N)
+    
+    function Hanning(n,N)
     {
         return 0.5 - 0.5 * Math.cos( 2* Math.PI * n / (N-1) );
     }
-}
+    }
