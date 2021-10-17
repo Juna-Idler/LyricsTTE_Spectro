@@ -938,8 +938,14 @@ var DropFile = null;
 document.body.appendChild(selectOverlap);
 document.getElementById("SpectroLoad").onclick = (e)=>{
     spectrogramViewer = null;
-    audio.src = window.URL.createObjectURL(DropFile);
+
     const ctx = canvas.getContext("2d");
+    ctx.textBaseline = "top";
+    ctx.font = canvas.height / 4 + "px sans-serif";
+    ctx.fillStyle = "white";
+    ctx.fillText("Now Decoding...", 0, 0);
+
+    audio.src = window.URL.createObjectURL(DropFile);
     audioFilename = DropFile.name;
 
     if (fragmentPlayer === null)
@@ -966,7 +972,7 @@ document.getElementById("SpectroLoad").onclick = (e)=>{
                     ctx.fillStyle = "white";
                 
                     ctx.clearRect(0,0,canvas.width,canvas.height * 1.5 / 8);
-                    ctx.fillText(i + "/" + w, 0, 0);
+                    ctx.fillText("FFT:" + i + "/" + w, 0, 0);
                 
                 }
             },
