@@ -9,3 +9,7 @@ Lyrics Time Tag Editor のWebアプリ版のSpectrogram表示実験版
 
 とりあえずPages
 https://juna-idler.github.io/LyricsTTE_Spectro/
+
+適当な作業動画
+- https://youtu.be/DpHPlbodmqI #1
+- https://youtu.be/52gBLLJNeXk #2
