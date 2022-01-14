@@ -42,6 +42,7 @@ const canvas = document.getElementById( 'WaveCanvas' );
 const textarea = document.getElementById('TextArea');
 const playbackRate = document.getElementById('PlaybackRate');
 
+const currentPlayColor = "#0C0";
 
 var audioFilename = "";
 
@@ -73,7 +74,7 @@ function DrawWaveView()
     const nowpoint = Math.floor(width * 0.3)
     spectrogramViewer.DrawCanvas(canvas,WaveViewTime / 1000 - nowpoint / Zoom);
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "white";
+    ctx.fillStyle = currentPlayColor;
     ctx.fillRect(nowpoint,0,1,height);
 }
 
@@ -671,7 +672,7 @@ var SetDefaultCanvasMouseEvent;
             const text_span = label.querySelector(".list_text");
             const current = label.querySelector("input").checked;
 
-            ctx.fillStyle = current ? "lime" : "red";
+            ctx.fillStyle = current ? currentPlayColor : "red";
             const x = (time - view_start_ms) / 1000 * Zoom;
             ctx.fillRect(x,0,1,canvas.height);
             ctx.fillText(text_span.textContent, x + 1, canvas.height);
